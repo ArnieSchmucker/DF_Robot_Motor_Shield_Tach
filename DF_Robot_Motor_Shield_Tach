@@ -1,0 +1,80 @@
+//This motor shield use Pin 6,5,7,4 to control the motor
+// Simply connect your motors to M1+,M1-,M2+,M2-
+// Upload the code to Arduino/Roboduino
+// Through serial monitor, type 'a','s', 'w','d','x' to control the motor
+// www.dfrobot.com
+// Last modified on 24/12/2009
+// #include <SoftwareSerial.h>
+// SoftwareSerial LCD(0, 8);
+#include<LiquidCrystal.h>
+LiquidCrystal LCD(12,11,10,9,8,7);
+int EN = 5;  //Roboduino Motor shield uses Pin 9
+int IN = 4; //Latest version use pin 4 instead of pin 8
+volatile int count0;
+volatile int count1;
+volatile int countAvg = 0;
+float rpm=0;
+//int voltmeter = 0;
+unsigned long lastmillis=0;
+unsigned long deltatime;
+
+ 
+void Motor(int pwm, boolean reverse)
+        {
+          analogWrite(EN,pwm); //set pwm control, 0 for stop, and 255 for maximum speed
+         if(reverse)
+         { 
+          digitalWrite(IN,HIGH);    
+         }
+         else
+         {
+          digitalWrite(IN,LOW);    
+         }
+        }   
+
+void rpm_motor_rising_0()
+{
+  count0++;
+}
+
+void rpm_motor_rising_1()
+{
+  count1++;
+}
+
+void setup() 
+{ 
+    pinMode(4, OUTPUT);  
+    pinMode(5, OUTPUT);
+    attachInterrupt(0, rpm_motor_rising_0, RISING);
+    attachInterrupt(1, rpm_motor_rising_1, RISING);
+    //LCD.begin(9600);
+    //clearScreen();
+    //selectLineOne();
+    LCD.begin(16,2); 
+} 
+ 
+ 
+void loop() D
+{
+    Motor(150, 0);
+    if(millis()-lastmillis==1000)    //Update every one second, this will be equal to reading freguency(Hz)
+    {
+      detachInterrupt(0);            //Disable interrupt when calculating
+      detachInterrupt(1);
+      //deltatime = millis() - lastmillis; 
+      countAvg = (count0 + count1)/2;
+      rpm = countAvg * (60/12);
+      //voltmeter = map((int)rpm, 0, 25000, 0, 255);
+      //analogWrite(9, voltmeter);
+      LCD.clear();
+      LCD.setCursor(6,0);
+      LCD.print((int)rpm);
+      delay(500);
+      count0 = 0;
+      count1 = 0;
+      lastmillis=millis();
+      attachInterrupt(0, rpm_motor_rising_0, RISING);
+      attachInterrupt(1, rpm_motor_rising_1, RISING);
+    }
+} 
